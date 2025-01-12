@@ -1,0 +1,20 @@
+.brand-name {
+  background: linear-gradient(135deg, #89c2ff, #4484ff);
+  padding: 10px 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.brand-name > img {
+  width: 180px;
+  height: 60px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.brand-name > img:hover {
+  transform: scale(1.05);
+}
