@@ -37,7 +37,7 @@ export class LoginComponent {
 
   async login(email:string, passw:string) {
     const myHeaders = new HttpHeaders({"Accept": "application/json"});
-    this.http.post('http://localhost:8000/api/auth/login',
+    this.http.post('https://www.libertylingo.com/api/auth/login',
       {"email": email, "password": passw},
       {headers: myHeaders}
     ).subscribe({
@@ -53,7 +53,7 @@ export class LoginComponent {
 
   async register(email:string, passw:string) {
     const myHeaders = new HttpHeaders({"Accept": "application/json"});
-    this.http.post('http://localhost:8000/api/auth/register',
+    this.http.post('https://www.libertylingo.com/api/auth/register',
       {"email": email, "password": passw},
       {headers: myHeaders}
     ).subscribe({

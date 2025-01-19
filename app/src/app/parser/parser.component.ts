@@ -56,7 +56,7 @@ export class ParserComponent {
 
     this.isLoading = true;
 
-    this.http.get(`http://localhost:8000/api/scrap/${xacc}`, { headers: myHeaders }).subscribe({
+    this.http.get(`http://www.libertylingo.com/api/scrap/${xacc}`, { headers: myHeaders }).subscribe({
       next: (data: any) => {
         this.generatedText = data.text;
         this.isLoading = false;
