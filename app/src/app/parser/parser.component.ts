@@ -13,7 +13,8 @@ import { Router } from '@angular/router';
       <div class="container">
         <form>
           <input type="text" placeholder="X account name" #xacc />
-          <button class="primary" type="button" (click)="scrap(xacc.value)" [disabled]="isLoading">
+          <input type="text" placeholder="data analysis task (not necessarily)" #task>
+          <button class="primary" type="button" (click)="scrap(xacc.value, task.value)" [disabled]="isLoading">
             {{ isLoading ? 'Loading...' : 'Tell me about...' }}
           </button>
           <div *ngIf="isLoading" class="loading-spinner"></div>
@@ -42,7 +43,7 @@ export class ParserComponent {
     }
   }
 
-  async scrap(xacc: string) {
+  async scrap(xacc: string, task: string) {
     if (!xacc.trim()) {
       alert('Please enter a valid account name');
       this.generatedText = 'Please enter a valid account name';
@@ -56,7 +57,7 @@ export class ParserComponent {
 
     this.isLoading = true;
 
-    this.http.get(`https://www.libertylingo.com/api/scrap/${xacc}`, { headers: myHeaders }).subscribe({
+    this.http.post(`https://www.libertylingo.com/api/scrap/${xacc}`,{"task":task},{ headers: myHeaders }).subscribe({
       next: (data: any) => {
         this.generatedText = data.text;
         this.isLoading = false;
