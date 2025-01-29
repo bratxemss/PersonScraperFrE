@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CookieService } from 'ngx-cookie-service';
 import { CommonModule } from '@angular/common';
@@ -17,21 +17,23 @@ import { Chart, registerables } from 'chart.js';
 
       <div class="left-panel">
         <form onsubmit="return false;">
-          <input type="text" placeholder="X account name" #xacc />
+          <input list="users" autocomplete="on" type="text" (input)="onSearch($event)" placeholder="X account name" #xacc >
+          <datalist id = "users"></datalist>
           <input type="text" placeholder="Data analysis task (optional)" #task />
           <button type="button" (click)="scrap(xacc.value, task.value)" [disabled]="isLoading">
             {{ isLoading ? 'Loading...' : 'Tell me about...' }}
           </button>
         </form>
-        <div *ngIf="generatedText" class="generated_text">{{ generatedText }}</div>
+        <div *ngIf="generatedText" class="generated_text">
+          {{ generatedText }}
+          <p></p>
+          <button class="refresh-button" (click)="refreshGeneratedText()" [disabled]="isLoading">
+            <div class="arrow">&#x21bb;</div>
+          </button>
+        </div>
       </div>
 
       <div class="right-panel">
-        <form onsubmit="return false;">
-          <input type="text" (input)="onSearch($event)" placeholder="Find user" />
-          <p></p>
-        </form>
-
         <div class="user-list">
           <select *ngIf="users.length >= 2" (change)="onSort($event)">
             <option value="name">Sort by Name</option>
@@ -46,6 +48,7 @@ import { Chart, registerables } from 'chart.js';
               <p><strong>GPT Response:</strong> {{ user.user_gpt_response }}</p>
               <p><strong>Assumed Age:</strong> {{ user.user_assumed_age }}</p>
               <p><strong>Assumed MBTI:</strong> {{ user.user_assumed_mbti }}</p>
+              <p><strong>Favorite word:</strong> '{{ user.user_most_popular_word }}' occurred {{ user.user_most_popular_word_count }} times</p>
               <div class="chart-container">
                 <canvas id="tweetsChart"></canvas>
             </div>
@@ -57,7 +60,7 @@ import { Chart, registerables } from 'chart.js';
   `,
   styleUrls: ['./parser.component.css']
 })
-export class ParserComponent {
+export class ParserComponent implements OnInit{
   http: HttpClient = inject(HttpClient);
   router: Router = inject(Router);
   token: string = '';
@@ -65,12 +68,31 @@ export class ParserComponent {
   isLoading: boolean = false;
   users: any[] = [];
   chart: Chart | null = null;
+  lettersAmount: string = '';
+  lastXacc: string = '';
+  lastTask: string = '';
 
   constructor(private cookieService: CookieService) {
     Chart.register(...registerables);
     if (this.cookieService.get('token')) {
       this.token = this.cookieService.get('token');
     }
+  }
+
+
+  populateDatalist() {
+    const key = 'x_users';
+    let users: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+    let datalist = document.getElementById('users') as HTMLDataListElement;
+    datalist.innerHTML = '';
+    users.forEach(user => {
+        let option = document.createElement('option');
+        option.value = user;
+        datalist.appendChild(option);
+    });
+}
+  ngOnInit() {
+    this.populateDatalist()
   }
 
   onSort(event: Event) {
@@ -89,6 +111,7 @@ export class ParserComponent {
 
     if (value?.length <= 1) {
       this.users = [];
+      this.lettersAmount = '';
       if (this.chart) {
         this.chart.destroy();
         this.chart = null;
@@ -101,15 +124,25 @@ export class ParserComponent {
       Authorization: `Bearer ${this.token}`
     });
 
+    if (this.lettersAmount && this.lettersAmount.length < value.length ){
+      return
+    }else{
+      this.lettersAmount = ''
+    }
     this.http.get(`https://www.libertylingo.com/api/search/${value}`, { headers: myHeaders }).subscribe({
       next: (data: any) => {
         this.users = data.users.map((user: any) => ({ ...user, showDetails: false }));
+        if (this.users.length == 1 && this.lettersAmount == ""){
+          this.lettersAmount = value
+        }
       },
       error: (error: any) => {
         console.error('Search error:', error);
         alert(`An error occurred: ${error.message || 'Unknown error'}`);
       }
     });
+
+
   }
 
   async toggleDetails(login: string) {
@@ -221,13 +254,27 @@ private processTweetData(data: any[]): { labels: string[]; counts: number[] } {
     });
   }
 
-  async scrap(xacc: string, task: string) {
+  saveUserInCash(name: string) {
+    const key = 'x_users';
+    let users: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+
+    if (!users.includes(name)) {
+        if (users.length >= 10) {
+            users.shift();
+        }
+        users.push(name);
+        localStorage.setItem(key, JSON.stringify(users));
+    }
+}
+
+  async scrap(xacc: string, task: string, force:boolean=false) {
     if (!xacc.trim()) {
       alert('Please enter a valid account name');
       this.generatedText = 'Please enter a valid account name';
       return;
     }
-
+    this.lastXacc = xacc;
+    this.lastTask = task;
     const myHeaders = new HttpHeaders({
       Accept: 'application/json',
       Authorization: `Bearer ${this.token}`
@@ -235,7 +282,17 @@ private processTweetData(data: any[]): { labels: string[]; counts: number[] } {
 
     this.isLoading = true;
 
-    this.http.post(`https://www.libertylingo.com/api/scrap/${xacc}`, { "task": task }, { headers: myHeaders }).subscribe({
+    const user = this.users.find(u => u.login === xacc)
+
+    this.saveUserInCash(xacc)
+    this.populateDatalist()
+
+    if (!task.trim() && user && !force){
+      this.generatedText = user["user_gpt_response"]
+      this.isLoading = false
+      return
+    }
+    this.http.post(`https://www.libertylingo.com/api/scrap/${xacc}`, { "task": task, "force": force }, { headers: myHeaders }).subscribe({
       next: (data: any) => {
         this.generatedText = data.text;
         this.isLoading = false;
@@ -258,9 +315,14 @@ private processTweetData(data: any[]): { labels: string[]; counts: number[] } {
       }
     });
   }
+  async refreshGeneratedText() {
+  if (!this.lastXacc) return; // Если данных нет, ничего не делаем
+  await this.scrap(this.lastXacc, this.lastTask, true);
+  }
 
   async logout() {
     this.cookieService.delete('token');
     this.router.navigate(['/']);
   }
 }
+

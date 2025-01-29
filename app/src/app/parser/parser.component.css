@@ -19,8 +19,9 @@ body {
 }
 
 .logout-button {
-  flex-basis: 100%;
-  text-align: right;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
 }
 
 .logout-button button {
@@ -144,6 +145,7 @@ button:active {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.84);
   line-height: 1.6;
   color: #000000;
+
 }
 
 header {
@@ -189,4 +191,25 @@ option {
   font-size: 16px;
   background: #ffffff;
   color: #333;
+}
+
+.refresh-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  cursor: pointer;
+  display:flex;
+
+
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow {
+  font-size: 24px;
+  transition: transform 0.5s ease-in-out;
+}
+
+.refresh-button.active .arrow {
+  transform: rotate(360deg);
 }
