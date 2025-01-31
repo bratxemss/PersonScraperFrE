@@ -10,53 +10,70 @@ import { Chart, registerables } from 'chart.js';
   providers: [CookieService],
   imports: [CommonModule],
   template: `
-   <section class="container">
-      <div class="logout-button">
-        <button type="button" (click)="logout()">Logout</button>
-      </div>
+<section class="container">
+  <div class="logout-button">
+    <button type="button" (click)="logout()">Logout</button>
+  </div>
 
-      <div class="left-panel">
-        <form onsubmit="return false;">
-          <input list="users" autocomplete="on" type="text" (input)="onSearch($event)" placeholder="X account name" #xacc >
-          <datalist id = "users"></datalist>
-          <input type="text" placeholder="Data analysis task (optional)" #task />
-          <button type="button" (click)="scrap(xacc.value, task.value)" [disabled]="isLoading">
-            {{ isLoading ? 'Loading...' : 'Tell me about...' }}
-          </button>
-        </form>
-        <div *ngIf="generatedText" class="generated_text">
-          {{ generatedText }}
-          <p></p>
-          <button class="refresh-button" (click)="refreshGeneratedText()" [disabled]="isLoading">
-            <div class="arrow">&#x21bb;</div>
-          </button>
-        </div>
-      </div>
+  <div class="left-panel">
+    <form onsubmit="return false;">
+      <input list="users" autocomplete="on" type="text" (input)="onSearch($event)" placeholder="Twitter account" #xacc>
+      <datalist id="users"></datalist>
 
-      <div class="right-panel">
-        <div class="user-list">
-          <select *ngIf="users.length >= 2" (change)="onSort($event)">
-            <option value="name">Sort by Name</option>
-            <option value="age">Sort by Age</option>
-            <option value="date">Sort by Analysis Date</option>
-          </select>
-          <p></p>
-          <div *ngFor="let user of users" class="user-item" (click)="toggleDetails(user.login)">
-            <span class="user-login">{{ user.login }}</span>
-            <div *ngIf="user.showDetails" class="user-details">
-              <p><strong>Description:</strong> {{ user.user_description || 'No description available' }}</p>
-              <p><strong>GPT Response:</strong> {{ user.user_gpt_response }}</p>
-              <p><strong>Assumed Age:</strong> {{ user.user_assumed_age }}</p>
-              <p><strong>Assumed MBTI:</strong> {{ user.user_assumed_mbti }}</p>
-              <p><strong>Favorite word:</strong> '{{ user.user_most_popular_word }}' occurred {{ user.user_most_popular_word_count }} times</p>
-              <div class="chart-container">
-                <canvas id="tweetsChart"></canvas>
+      <button type="button" (click)="scrap(xacc.value, '')" [disabled]="isLoading">
+        {{ isLoading ? 'Loading...' : 'Tell me about...' }}
+      </button>
+    </form>
+    <div *ngIf="generatedText" class="generated_text">
+      {{ generatedText }}
+      <p></p>
+      <button class="refresh-button" (click)="refreshGeneratedText()" [disabled]="isLoading">
+        <div class="arrow">&#x21bb;</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="user-list">
+      <select *ngIf="users.length >= 2" (change)="onSort($event)">
+        <option value="name">Sort by Name</option>
+        <option value="age">Sort by Age</option>
+        <option value="date">Sort by Analysis Date</option>
+      </select>
+      <p></p>
+      <div *ngFor="let user of users" class="user-item" (click)="toggleDetails(user.login)">
+        <span class="user-login">{{ user.login }}</span>
+        <div *ngIf="user.showDetails" class="user-details">
+          <p><strong>{{ user.login }} description:</strong> {{ user.user_description || 'No description available' }}</p>
+          <p><strong> {{ user.login }}</strong>  : {{ user.user_gpt_response }}</p>
+          <p><strong>Age:</strong> {{ user.user_assumed_age }}</p>
+          <p><strong>MBTI:</strong> {{ user.user_assumed_mbti }}</p>
+          <p><strong>Favorite word:</strong> '{{ user.user_most_popular_word }}' occurred {{ user.user_most_popular_word_count }} times</p>
+          <h3>User Queries</h3>
+          <ul *ngIf="user.queries.length > 0; else noQueries">
+            <div *ngFor="let query of user.queries">
+              <div class="query-data" (click)="query.showAnswer = !query.showAnswer">
+                {{ query.Query }}
+                <span class="icon">{{ query.showAnswer ? '▲' : '▼' }}</span>
+              </div>
+              <p *ngIf="query.showAnswer" [class.show]="query.showAnswer">
+                <strong>Answer:</strong> {{ query.Query_answer }}
+              </p>
             </div>
-            </div>
+          </ul>
+          <ng-template #noQueries>
+            <p>No queries found.</p>
+          </ng-template>
+          <input type="text" placeholder="Data analysis task (optional)" #task (keydown.enter)="!isLoading && scrap(user.login, task.value)" [disabled]="isLoading" />
+
+          <div class="chart-container">
+            <canvas id="tweetsChart"></canvas>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
   `,
   styleUrls: ['./parser.component.css']
 })
@@ -79,7 +96,6 @@ export class ParserComponent implements OnInit{
     }
   }
 
-
   populateDatalist() {
     const key = 'x_users';
     let users: string[] = JSON.parse(localStorage.getItem(key) || '[]');
@@ -91,9 +107,30 @@ export class ParserComponent implements OnInit{
         datalist.appendChild(option);
     });
 }
-  ngOnInit() {
-    this.populateDatalist()
+
+  onClickOutside(event: Event) {
+    const target = event.target as HTMLElement;
+
+    const isUserItem = target.closest('.user-item');
+    const isUserDetails = target.closest('.user-details');
+
+    if (!isUserItem && !isUserDetails) {
+
+      this.users = this.users.map(user => ({ ...user, showDetails: false }));
+
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+    }
   }
+
+  ngOnInit() {
+    this.populateDatalist();
+    document.addEventListener('click', this.onClickOutside.bind(this));
+  }
+
+
 
   onSort(event: Event) {
     const value = (event.target as HTMLSelectElement).value;
@@ -105,7 +142,7 @@ export class ParserComponent implements OnInit{
     });
   }
 
-  async onSearch(event: Event) {
+ async onSearch(event: Event) {
     const target = event.target as HTMLInputElement;
     const value = target?.value.trim();
 
@@ -129,12 +166,17 @@ export class ParserComponent implements OnInit{
     }else{
       this.lettersAmount = ''
     }
-    this.http.get(`https://www.libertylingo.com/api/search/${value}`, { headers: myHeaders }).subscribe({
+    this.http.get(`http://localhost:8000/api/search/${value}`, { headers: myHeaders }).subscribe({
       next: (data: any) => {
-        this.users = data.users.map((user: any) => ({ ...user, showDetails: false }));
+        this.users = data.users.map((user: any, index:number) => ({
+          ...user,
+          showDetails: false,
+          queries: data.users_queries[index] || []
+        }));
         if (this.users.length == 1 && this.lettersAmount == ""){
           this.lettersAmount = value
         }
+        console.log(this.users)
       },
       error: (error: any) => {
         console.error('Search error:', error);
@@ -154,26 +196,13 @@ export class ParserComponent implements OnInit{
     const selectedUser = this.users.find(user => user.login === login);
 
     if (selectedUser?.showDetails) {
-      this.users = this.users.map(user => ({
-        ...user,
-        showDetails: false
-      }));
-      if (this.chart) {
-        this.chart.destroy();
-        this.chart = null;
-      }
     } else {
       this.users = this.users.map(user => ({
         ...user,
         showDetails: user.login === login
       }));
 
-      if (this.chart) {
-        this.chart.destroy();
-        this.chart = null;
-      }
-
-      this.http.get(`https://www.libertylingo.com/api/get_twits_data/${login}`, { headers: myHeaders }).subscribe({
+      this.http.get(`http://localhost:8000/api/get_twits_data/${login}`, { headers: myHeaders }).subscribe({
         next: (data: any) => {
           this.renderChart(this.processTweetData(data["data"]));
         },
@@ -292,10 +321,17 @@ private processTweetData(data: any[]): { labels: string[]; counts: number[] } {
       this.isLoading = false
       return
     }
-    this.http.post(`https://www.libertylingo.com/api/scrap/${xacc}`, { "task": task, "force": force }, { headers: myHeaders }).subscribe({
+    this.http.post(`http://localhost:8000/api/scrap/${xacc}`, { "task": task, "force": force }, { headers: myHeaders }).subscribe({
       next: (data: any) => {
         this.generatedText = data.text;
         this.isLoading = false;
+
+        const inputEvent = new Event('input');
+        const searchInput = document.querySelector('input[list="users"]') as HTMLInputElement;
+        if (searchInput) {
+            searchInput.value = xacc;
+            searchInput.dispatchEvent(inputEvent);
+        }
       },
       error: (error: any) => {
         this.isLoading = false;

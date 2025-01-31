@@ -106,6 +106,117 @@ button:hover {
   transform: scale(1.03);
 }
 
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+  color: #0d47a1;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  width: 90%;
+  max-width: 1200px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.left-panel, .right-panel {
+  padding: 20px;
+}
+
+.left-panel {
+  flex: 1;
+  border-right: 1px solid #e0e0e0;
+}
+
+.right-panel {
+  flex: 2;
+}
+
+button {
+  background-color: #0d47a1;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #1976d2;
+  transform: scale(1.05);
+}
+
+button:disabled {
+  background-color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+input[type="text"], select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 5px;
+  transition: border-color 0.3s ease;
+}
+
+input[type="text"]:focus, select:focus {
+  border-color: #0d47a1;
+  outline: none;
+}
+
+.user-item {
+  background: white;
+  margin-bottom: 10px;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+
+.logout-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .left-panel, .right-panel {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+}
 button:active {
   transform: scale(1.01);
 }
@@ -212,4 +323,90 @@ option {
 
 .refresh-button.active .arrow {
   transform: rotate(360deg);
+}
+
+
+.query-data {
+  background-color: rgba(0, 172, 193, 0.3);
+  padding: 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #00acc1;
+  color: #000000;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.query-data:hover {
+  background-color: #00acc1;
+  border-color: #00acc1;
+  box-shadow: 0 4px 10px rgba(13, 71, 161, 0.1);
+  transform: translateY(-2px);
+}
+
+.query-data .icon {
+  font-size: 14px;
+  color: #0d47a1;
+  transition: transform 0.3s ease;
+}
+
+.query-data .icon.rotated {
+  transform: rotate(180deg);
+}
+
+.query-data + p {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: rgba(0, 172, 193, 0.35);
+  border-left: 4px solid #0d47a1;
+  border-radius: 5px;
+  color: #0d47a1;
+  font-size: 14px;
+  line-height: 1.5;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.3s ease, max-height 0.3s ease, padding 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.query-data + p.show {
+  opacity: 1;
+  max-height: 500px;
+  padding: 12px;
+}
+
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.query-data + p.show {
+  animation: slideIn 0.3s ease-out;
+}
+
+.query-data .icon {
+  float: right;
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.query-data .icon {
+  transform: rotate(0deg);
+}
+
+.query-data .icon.show {
+  transform: rotate(180deg);
 }
