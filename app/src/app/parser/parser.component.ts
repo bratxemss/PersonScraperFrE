@@ -166,7 +166,7 @@ export class ParserComponent implements OnInit{
     }else{
       this.lettersAmount = ''
     }
-    this.http.get(`http://localhost:8000/api/search/${value}`, { headers: myHeaders }).subscribe({
+    this.http.get(`https://www.libertylingo.com/api/search/${value}`, { headers: myHeaders }).subscribe({
       next: (data: any) => {
         this.users = data.users.map((user: any, index:number) => ({
           ...user,
@@ -202,7 +202,7 @@ export class ParserComponent implements OnInit{
         showDetails: user.login === login
       }));
 
-      this.http.get(`http://localhost:8000/api/get_twits_data/${login}`, { headers: myHeaders }).subscribe({
+      this.http.get(`https://www.libertylingo.com/api/get_twits_data/${login}`, { headers: myHeaders }).subscribe({
         next: (data: any) => {
           this.renderChart(this.processTweetData(data["data"]));
         },
@@ -321,7 +321,7 @@ private processTweetData(data: any[]): { labels: string[]; counts: number[] } {
       this.isLoading = false
       return
     }
-    this.http.post(`http://localhost:8000/api/scrap/${xacc}`, { "task": task, "force": force }, { headers: myHeaders }).subscribe({
+    this.http.post(`https://www.libertylingo.com/api/scrap/${xacc}`, { "task": task, "force": force }, { headers: myHeaders }).subscribe({
       next: (data: any) => {
         this.generatedText = data.text;
         this.isLoading = false;
